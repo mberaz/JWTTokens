@@ -26,21 +26,21 @@ namespace JWTTokens.Filters
             try
             {
                 var token = HttpContext.Current.Request.Headers[Authorization];
-                token = token.Replace(Bearer, "");
+                if (string.IsNullOrEmpty(token))
+                {
+                    actionContext.Response = new HttpResponseMessage(HttpStatusCode.Unauthorized) { ReasonPhrase = "No token!" };
+                    return;
+                }
+
+                //token = token.Replace(Bearer, "");
 
                 var handler = new JwtSecurityTokenHandler();
+
+                var baseUrl = actionContext.Request.RequestUri.ToString().Replace(actionContext.Request.RequestUri.LocalPath, "").Split('?')[0];
                 var tokenValidationParameters = new TokenValidationParameters()
                 {
-                    ValidAudiences = new string[]
-                    {
-                        "http://xxx.azurewebsites.net",
-                        "http://localhost:62661"
-                    },
-                    ValidIssuers = new string[]
-                    {
-                        "AzureSend",
-                    },
-                   // RequireExpirationTime = false,
+                    ValidAudiences = new[] { baseUrl },
+                    ValidIssuers = new[] { "AzureSend" },
                     IssuerSigningKey = Config.GetKey()
                 };
 
@@ -59,7 +59,6 @@ namespace JWTTokens.Filters
             }
             catch (Exception)
             {
-
                 actionContext.Response = new HttpResponseMessage(HttpStatusCode.Unauthorized) { ReasonPhrase = "Wrong token or userId!" };
                 return;
             }

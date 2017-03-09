@@ -20,6 +20,10 @@ namespace JWTTokens.Controllers
         [HttpPost]
         public IHttpActionResult Register(UserModel model)
         {
+            //            {
+            //                "UserName":"michael",
+            //	            "Password":"5461661"
+            //          }
             var now = DateTime.UtcNow;
             var expire = now.AddHours(5);
             var header = new JwtHeader(Config.GetSecret());
@@ -29,32 +33,27 @@ namespace JWTTokens.Controllers
 
 
             // register user in DB, get user ID
-            //var payload = new JwtPayload
-            //{
-            //    {"iss", "AzureSend"},//issuer
-            //    {"exp ", now.AddHours(5)},//expiration time
-            //    {"iat" ,now},//The time the JWT was issued,
-            //    { "aud","http://localhost:62661"},
-            //    { "name",model.UserName},
-            //    { "userId",5}
-            //};
+            var userId = 5;
 
+            var baseUrl = Request.RequestUri.ToString().Replace(Request.RequestUri.LocalPath, "").Split('?')[0];
+            var issuer = "AzureSend";
             var calimList = new List<Claim> {
-                new Claim("iss", "AzureSend"),
+                new Claim("iss", issuer),
                 new Claim("iat" ,now.ToString()),
                 new Claim("exp ",expire.ToString()),
-                new Claim("aud","http://localhost:62661"),
+                new Claim("aud",baseUrl),
                 new Claim("name",model.UserName),
-                new Claim("userId",5.ToString())
+                new Claim("userId",userId.ToString())
             };
 
-            var payload = new JwtPayload("AzureSend", "http://localhost:62661", calimList, now, expire);
+            var payload = new JwtPayload(issuer, baseUrl, calimList, now, expire);
             var secToken = new JwtSecurityToken(header, payload);
 
             var handler = new JwtSecurityTokenHandler();
             var tokenString = handler.WriteToken(secToken);
 
-            return Ok(ApiAuthorizationFilterAttribute.Bearer + tokenString);
+            return Ok(tokenString);
+            //return Ok(ApiAuthorizationFilterAttribute.Bearer + tokenString);
         }
 
 
