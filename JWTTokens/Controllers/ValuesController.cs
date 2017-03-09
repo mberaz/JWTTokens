@@ -22,8 +22,8 @@ namespace JWTTokens.Controllers
         // GET api/values/5
         public string Get(int id)
         {
-            // var name = ActionContext.ActionArguments["name"] as Claim;
-            var name = ActionContext.ActionArguments["name"].ToString();
+            // var name = ActionContext.ActionArguments[ApiAuthorizationFilterAttribute.Name] as Claim;
+            var name = ActionContext.ActionArguments[ApiAuthorizationFilterAttribute.Name].ToString();
             return name;
         }
 

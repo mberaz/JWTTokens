@@ -20,42 +20,31 @@ namespace JWTTokens.Filters
         public const string Authorization = "Authorization";
         public const string Bearer = "bearer ";
         public const string UserId = "userId";
+        public const string Name = "name";
 
         public override async Task OnAuthorizationAsync(HttpActionContext actionContext, System.Threading.CancellationToken cancellationToken)
         {
             try
             {
-                var token = HttpContext.Current.Request.Headers[Authorization];
+                var token = actionContext.Header(Authorization); //HttpContext.Current.Request.Headers[Authorization];
                 if (string.IsNullOrEmpty(token))
                 {
                     actionContext.Response = new HttpResponseMessage(HttpStatusCode.Unauthorized) { ReasonPhrase = "No token!" };
                     return;
                 }
 
-                //token = token.Replace(Bearer, "");
+                token = token.Replace(Bearer, "");
 
-                var handler = new JwtSecurityTokenHandler();
-
-                var baseUrl = actionContext.Request.RequestUri.ToString().Replace(actionContext.Request.RequestUri.LocalPath, "").Split('?')[0];
-                var tokenValidationParameters = new TokenValidationParameters()
-                {
-                    ValidAudiences = new[] { baseUrl },
-                    ValidIssuers = new[] { "AzureSend" },
-                    IssuerSigningKey = Config.GetKey()
-                };
-
-                SecurityToken validatedToken;
-
-                var claims = handler.ValidateToken(token, tokenValidationParameters, out validatedToken);
-
-                var name = claims.FindFirst(c => c.Type == "name");
-                var userId = claims.FindFirst(c => c.Type == UserId);
+                var result = JwtHandler.DecodeToken(token, actionContext.BaseUrl());
+                var name = result.ClaimsPrincipal.FindFirst(c => c.Type == Name);
+                var userId = result.ClaimsPrincipal.FindFirst(c => c.Type == UserId);
 
                 //get user from Db by user id
 
-                actionContext.ActionArguments.Add("name", $"{name.Value}:{userId.Value}");
 
-                var issuer = validatedToken.Issuer;
+                actionContext.ActionArguments.Add(Name, $"{name.Value}:{userId.Value}");
+
+                var issuer = result.SecurityToken.Issuer;
             }
             catch (Exception)
             {
